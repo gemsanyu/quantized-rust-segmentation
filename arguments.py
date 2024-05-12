@@ -17,9 +17,11 @@ def prepare_args():
                         help="title to differentiate between experiments")
     parser.add_argument('--arch',
                         choices=["fpn","unet","unet++","manet","linknet","pspnet","pan","deeplabv3","deeplabv3+"],
+                        default="fpn",
                         help="choices for architecture")
     parser.add_argument('--dataset',
                         choices=["NEA"],
+                        default="NEA",
                         help="name of dataset")
     
     
@@ -47,6 +49,7 @@ def prepare_args():
                         default="imagenet",
                         help="pretrained source (name) for encoder")
     
-    
-    return parser.parse_args(sys.argv[1:])
+    args = parser.parse_args(sys.argv[1:])
+    args.title = args.arch+"_"+args.dataset+"_"+args.title
+    return args
     
