@@ -1,82 +1,88 @@
 import pathlib
-import os
 import random
-
-from torchvision import models, datasets
+from typing import Tuple
 
 import numpy as np
+import segmentation_models_pytorch as smp
 import torch
-import torchvision.transforms.v2 as transforms
-from PIL import Image, ImageDraw
-from detectron2 import model_zoo
-from detectron2.engine import DefaultPredictor
-from detectron2.config import get_cfg
-from detectron2.utils.visualizer import Visualizer, ColorMode
-from detectron2.data import MetadataCatalog, DatasetCatalog
-from detectron2.data.datasets import register_coco_instances
-from detectron2.engine import DefaultTrainer
-from detectron2.modeling.meta_arch.rcnn import GeneralizedRCNN
-    
-def run():
-    dataset_dir = pathlib.Path("")/"NEA-Dataset-coco"/"train"
-    test_dataset_dir =pathlib.Path("")/"NEA-Dataset-coco"/"test"
-    annotation_file_path = dataset_dir/"_annotations.coco.json"
-    test_annotation_file_path = test_dataset_dir/"_annotations.coco.json"
-    register_coco_instances("ndea_dataset_train", {}, annotation_file_path.absolute(), dataset_dir.absolute())
-    register_coco_instances("ndea_dataset_test", {}, test_annotation_file_path.absolute(), test_dataset_dir.absolute())
-    
-    ndea_metadata = MetadataCatalog.get("ndea_dataset_train")
-    dataset_dicts = DatasetCatalog.get("ndea_dataset_train")
-    
-    cfg = get_cfg()
-    cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"))
-    cfg.DATASETS.TRAIN = ("ndea_dataset_train",)
-    cfg.DATASETS.TEST = ()
-    cfg.DATALOADER.NUM_WORKERS = 2
-    cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml")  # Let training initialize from model zoo
-    cfg.SOLVER.IMS_PER_BATCH = 2  # This is the real "batch size" commonly known to deep learning people
-    cfg.SOLVER.BASE_LR = 0.00025  # pick a good LR
-    cfg.SOLVER.MAX_ITER = 1500    # 300 iterations seems good enough for this toy dataset; you will need to train longer for a practical dataset
-    cfg.SOLVER.STEPS = []        # do not decay learning rate
-    cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 128   # The "RoIHead batch size". 128 is faster, and good enough for this toy dataset (default: 512)
-    cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1  # only has one class (ballon). (see https://detectron2.readthedocs.io/tutorials/datasets.html#update-the-config-for-new-datasets)
-    # NOTE: this config means the number of classes, but a few popular unofficial tutorials incorrect uses num_classes+1 here.
-    
-    # os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
-    trainer = DefaultTrainer(cfg) 
-    trainer.resume_or_load(resume=False)
-    trainer.train()
-    trainer.register_hooks()
-    
-    
-    # cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, "model_final.pth")  # path to the model we just trained
-           # set a custom testing threshold
-    predictor = DefaultPredictor(cfg)
-    
-    test_dataset_dicts = DatasetCatalog.get("ndea_dataset_train")
+import torch.utils
+import torch.utils.data
+from arguments import prepare_args
+from segmentation_dataset import (SegmentationDataset, get_preprocessing,
+                                  get_training_augmentation,
+                                  get_validation_augmentation)
+from segmentation_models_pytorch.utils.losses import DiceLoss
+from segmentation_models_pytorch.utils.metrics import Accuracy, IoU, Precision, Recall, Fscore
+from segmentation_models_pytorch.utils.train import TrainEpoch, ValidEpoch
+from setup import setup
+from sklearn.model_selection import KFold
+from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
+from utils import save, write_logs
 
-    
-    
-    for d in random.sample(test_dataset_dicts, 5):
-        img = Image.open(d["file_name"])
-        img.show()
-        img = np.asarray(img)[:,:,::-1]
-        # print(img.shape)
-        # exit()
-        # img.transpose(2,1,0)
-        outputs = predictor(img)
-        # print(outputs["instances"].to("cpu"))
-        # # print(outputs)
-        # # exit()
-        v = Visualizer(img, metadata=ndea_metadata, scale=0.5)
-        # exit()
-        out = v.draw_instance_predictions(outputs["instances"].to("cpu"))
-        out_img = out.get_image()
-        out_img = np.asarray(out_img)
-        out_img = out_img[:,:,::-1]
-        # # out_img.transpose(2,1,0)
-        out_img = Image.fromarray(out_img)
-        out_img.show()
 
+def train(trainer: TrainEpoch,
+          train_dataloader: DataLoader,
+          validator: ValidEpoch,
+          validation_dataloader: DataLoader,
+          tb_writer: SummaryWriter,
+          checkpoint_dir: pathlib.Path,
+          last_epoch: int,
+          max_epoch: int):
+    """train the model and also validate for max_epoch epochs
+
+    Args:
+        trainer (TrainEpoch): _description_
+        train_dataloader (DataLoader): _description_
+        validator (ValidEpoch): _description_
+        validation_dataloader (DataLoader): _description_
+        tb_writer (SummaryWriter): _description_
+        checkpoint_dir (pathlib.Path): _description_
+        last_epoch (int): _description_
+        max_epoch (int): _description_
+    """
+    for epoch in range(last_epoch+1, max_epoch):
+        train_logs = trainer.run(train_dataloader)
+        train_logs["lr"] = trainer.optimizer.param_groups[0]['lr']
+        valid_logs = validator.run(validation_dataloader)
+        write_logs(train_logs, valid_logs, tb_writer, epoch)
+        save(trainer.model, trainer.optimizer, valid_logs, checkpoint_dir, epoch)
+        
+      
+def prepare_train_and_validation_datasets(args, n_splits=5)->Tuple[SegmentationDataset,SegmentationDataset]:
+    full_train_dataset = SegmentationDataset(name=args.dataset, mode="train")
+    preprocessing_fn = smp.encoders.get_preprocessing_fn(args.encoder,args.encoder_pretrained_source)
+    preprocessing = get_preprocessing(preprocessing_fn)
+    augmentation = get_training_augmentation()
+    validation_augmentation = get_validation_augmentation()
+    kfold = KFold(n_splits=n_splits, shuffle=True)
+    for fold, (train_ids, val_ids) in enumerate(kfold.split(full_train_dataset)):
+        train_dataset = SegmentationDataset(name=args.dataset, mode="train", augmentation=augmentation, preprocessing=preprocessing, filter_idx_list=train_ids)
+        validation_dataset = SegmentationDataset(name=args.dataset, mode="train", augmentation=validation_augmentation, preprocessing=preprocessing, filter_idx_list=val_ids)
+        return train_dataset, validation_dataset
+    
+def run(args):
+    """main function to run the training, calling setup and preparing the train/validation epoch
+
+    Args:
+        args (_type_): _description_
+    """
+    model, optimizer, tb_writer, checkpoint_dir, last_epoch = setup(args)
+    train_dataset, validation_dataset = prepare_train_and_validation_datasets(args)
+    train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=True)
+    validation_dataloader = DataLoader(validation_dataset, batch_size=1, shuffle=False, pin_memory=True)
+    loss = DiceLoss()
+    metrics = [IoU(), Accuracy(), Precision(), Recall(), Fscore()]
+    trainer = TrainEpoch(model, loss, metrics, optimizer, args.device, verbose=True)
+    validator = ValidEpoch(model, loss, metrics, device="cpu", verbose=True)
+    train(trainer, train_dataloader, validator, validation_dataloader, tb_writer, checkpoint_dir, last_epoch, args.max_epoch)
+   
 if __name__ == "__main__":
-    run()
+    import ssl
+    ssl._create_default_https_context = ssl._create_unverified_context
+      
+    args = prepare_args()
+    torch.random.manual_seed(args.seed)
+    np.random.seed(args.seed)
+    random.seed(args.seed)
+    run(args)
