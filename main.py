@@ -74,7 +74,7 @@ def run(args):
     loss = DiceLoss()
     metrics = [IoU(), Accuracy(), Precision(), Recall(), Fscore()]
     trainer = TrainEpoch(model, loss, metrics, optimizer, args.device, verbose=True)
-    validator = ValidEpoch(model, loss, metrics, device="cpu", verbose=True)
+    validator = ValidEpoch(model, loss, metrics, device=args.device, verbose=True)
     train(trainer, train_dataloader, validator, validation_dataloader, tb_writer, checkpoint_dir, last_epoch, args.max_epoch)
    
 if __name__ == "__main__":
