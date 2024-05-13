@@ -11,7 +11,7 @@ from arguments import prepare_args
 from segmentation_dataset import (SegmentationDataset, get_preprocessing,
                                   get_training_augmentation,
                                   get_validation_augmentation)
-from segmentation_models_pytorch.utils.losses import DiceLoss
+from segmentation_models_pytorch.utils import losses
 from segmentation_models_pytorch.utils.metrics import Accuracy, IoU, Precision, Recall, Fscore
 from segmentation_models_pytorch.utils.train import TrainEpoch, ValidEpoch
 from setup import setup
@@ -71,7 +71,7 @@ def run(args):
     train_dataset, validation_dataset = prepare_train_and_validation_datasets(args)
     train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=True)
     validation_dataloader = DataLoader(validation_dataset, batch_size=1, shuffle=False, pin_memory=True)
-    loss = DiceLoss()
+    loss = losses.JaccardLoss()
     metrics = [IoU(), Accuracy(), Precision(), Recall(), Fscore()]
     trainer = TrainEpoch(model, loss, metrics, optimizer, args.device, verbose=True)
     validator = ValidEpoch(model, loss, metrics, device=args.device, verbose=True)
