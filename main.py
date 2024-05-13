@@ -42,6 +42,7 @@ def train(trainer: TrainEpoch,
         max_epoch (int): _description_
     """
     for epoch in range(last_epoch+1, max_epoch):
+        print("EPOCH:", epoch)
         train_logs = trainer.run(train_dataloader)
         train_logs["lr"] = trainer.optimizer.param_groups[0]['lr']
         valid_logs = validator.run(validation_dataloader)
