@@ -8,6 +8,8 @@ from torch.utils.tensorboard import SummaryWriter
 import torch
 from torch.optim import Optimizer
 
+from qmodel.decoder.fpn import QFPN
+
 ARCH_CLASS_DICT = {
     "fpn":smp.FPN,
     "unet":smp.Unet,
@@ -19,6 +21,18 @@ ARCH_CLASS_DICT = {
     "deeplabv3":smp.DeepLabV3,
     "deeplabv3+":smp.DeepLabV3Plus}
 
+ARCH_CLASS_DICT = {
+    "fpn":QFPN,
+    # "unet":smp.Unet,
+    # "unet++":smp.UnetPlusPlus,
+    # "manet":smp.MAnet,
+    # "linknet":smp.Linknet,
+    # "pspnet":smp.PSPNet,
+    # "pan":smp.PAN,
+    # "deeplabv3":smp.DeepLabV3,
+    # "deeplabv3+":smp.DeepLabV3Plus
+    }
+
 
 def prepare_tb_writer(args)->SummaryWriter:
     summary_root = "runs"
@@ -29,7 +43,7 @@ def prepare_tb_writer(args)->SummaryWriter:
     return tb_writer
 
 
-def setup_model(args)->SegmentationModel:
+def setup_model(args, is_quantized:bool)->SegmentationModel:
     Arch_Class = ARCH_CLASS_DICT[args.arch]
     model = Arch_Class(
         encoder_name=args.encoder,
@@ -39,17 +53,17 @@ def setup_model(args)->SegmentationModel:
     )
     return model
 
-def setup(args, load_best:bool=False)->Tuple[SegmentationModel, Optimizer, SummaryWriter, pathlib.Path, int]:
-    model = setup_model(args)
+def setup(args, load_best:bool=False, is_quantized:bool=False)->Tuple[SegmentationModel, Optimizer, SummaryWriter, pathlib.Path, int]:
+    model = setup_model(args, is_quantized)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
     tb_writer = prepare_tb_writer(args)
     
     checkpoint_root = "checkpoints"
     checkpoint_dir = pathlib.Path("")/checkpoint_root/args.title
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
-    checkpoint_path = checkpoint_dir/"model.pt"
+    checkpoint_path = checkpoint_dir/"checkpoint.pt"
     if load_best:
-        checkpoint_path = checkpoint_dir/"best_model.pt"
+        checkpoint_path = checkpoint_dir/"best_checkpoint.pt"
     
     checkpoint = None
     last_epoch = 0
@@ -57,6 +71,6 @@ def setup(args, load_best:bool=False)->Tuple[SegmentationModel, Optimizer, Summa
         checkpoint = torch.load(checkpoint_path.absolute())
         model.load_state_dict(checkpoint["model_state_dict"])
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-        last_epoch = checkpoint["last_epoch"]
+        last_epoch = checkpoint["epoch"]
     
     return model, optimizer, tb_writer, checkpoint_dir, last_epoch
