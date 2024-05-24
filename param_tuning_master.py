@@ -14,7 +14,7 @@ def start_param_tuning(args):
     experiment.config.tuner.name = 'TPE'
     experiment.config.tuner.class_args['optimize_mode'] = 'maximize'
     experiment.config.max_trial_number = 50
-    experiment.config.trial_concurrency = 1
+    experiment.config.trial_concurrency = 2
     search_space = {
         "lr": {"_type": "loguniform", "_value":[1e-5, 0.1]},
         "batch_size": {"_type":"choice", "_value":[2,4,8]}
