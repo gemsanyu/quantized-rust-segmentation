@@ -50,6 +50,6 @@ def prepare_args():
                         help="pretrained source (name) for encoder")
     
     args = parser.parse_args(sys.argv[1:])
-    args.title = args.arch+"_"+args.dataset+"_"+args.title
+    args.title = args.arch+"_"+args.encoder+"_"+args.dataset+"_"+args.title
     return args
     
