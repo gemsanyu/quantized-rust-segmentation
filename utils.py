@@ -36,10 +36,10 @@ def write_logs(train_logs: dict, valid_logs: dict, tb_writer:SummaryWriter, epoc
         v_value = valid_logs[v_key]
         tb_writer.add_scalar(v_key, v_value, epoch)
 
-def save(model:SegmentationModel, 
-         optimizer:Optimizer, 
-         valid_logs:dict, 
-         checkpoint_dir:pathlib.Path, 
+def save(model:SegmentationModel,
+         optimizer:Optimizer,
+         valid_logs:dict,
+         checkpoint_dir:pathlib.Path,
          epoch:int):
     checkpoint_path = checkpoint_dir/"checkpoint.pt"
     result_path = checkpoint_dir/"result.pt"
@@ -55,7 +55,7 @@ def save(model:SegmentationModel,
     best_checkpoint_path = checkpoint_dir/"best_checkpoint.pt"
     best_result_path = checkpoint_dir/"best_result.pt"
     best_result, best_iou_score, best_accuracy = None, None, None
-    if os.path.exists(best_result_path.absolute()):    
+    if os.path.exists(best_result_path.absolute()):
         best_result = torch.load(best_result_path.absolute())
         best_iou_score = best_result["iou_score"]
         best_accuracy = best_result["accuracy"]

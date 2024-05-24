@@ -8,8 +8,6 @@ from torch.utils.tensorboard import SummaryWriter
 import torch
 from torch.optim import Optimizer
 
-from qmodel.decoder.fpn import QFPN
-
 ARCH_CLASS_DICT = {
     "fpn":smp.FPN,
     "unet":smp.Unet,
@@ -21,17 +19,6 @@ ARCH_CLASS_DICT = {
     "deeplabv3":smp.DeepLabV3,
     "deeplabv3+":smp.DeepLabV3Plus}
 
-ARCH_CLASS_DICT = {
-    "fpn":QFPN,
-    # "unet":smp.Unet,
-    # "unet++":smp.UnetPlusPlus,
-    # "manet":smp.MAnet,
-    # "linknet":smp.Linknet,
-    # "pspnet":smp.PSPNet,
-    # "pan":smp.PAN,
-    # "deeplabv3":smp.DeepLabV3,
-    # "deeplabv3+":smp.DeepLabV3Plus
-    }
 
 
 def prepare_tb_writer(args)->SummaryWriter:
@@ -43,7 +30,7 @@ def prepare_tb_writer(args)->SummaryWriter:
     return tb_writer
 
 
-def setup_model(args, is_quantized:bool)->SegmentationModel:
+def setup_model(args)->SegmentationModel:
     Arch_Class = ARCH_CLASS_DICT[args.arch]
     model = Arch_Class(
         encoder_name=args.encoder,
@@ -53,8 +40,8 @@ def setup_model(args, is_quantized:bool)->SegmentationModel:
     )
     return model
 
-def setup(args, load_best:bool=False, is_quantized:bool=False)->Tuple[SegmentationModel, Optimizer, SummaryWriter, pathlib.Path, int]:
-    model = setup_model(args, is_quantized)
+def setup(args, load_best:bool=False)->Tuple[SegmentationModel, Optimizer, SummaryWriter, pathlib.Path, int]:
+    model = setup_model(args)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
     tb_writer = prepare_tb_writer(args)
     
