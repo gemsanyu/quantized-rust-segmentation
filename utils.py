@@ -10,7 +10,7 @@ import torch
 
 
 
-def write_logs(train_logs: dict, valid_logs: dict, tb_writer:SummaryWriter, epoch:int, mode:str="train"):
+def write_logs(train_logs: dict, valid_logs: dict, tb_writer:SummaryWriter, epoch:int):
     """write loss/metrics and other logs to track into tensorboard
 
     Args:

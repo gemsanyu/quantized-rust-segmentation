@@ -20,36 +20,33 @@ from torch.utils.tensorboard import SummaryWriter
 from utils import save, write_logs
 
 
-# def train(trainer: TrainEpoch,
-#           train_dataloader: DataLoader,
-#           validator: ValidEpoch,
-#           validation_dataloader: DataLoader,
-#           tb_writer: SummaryWriter,
-#           checkpoint_dir: pathlib.Path,
-#           last_epoch: int,
-#           max_epoch: int,
-#           save_per_epoch:bool=False):
-#     """train the model and also validate for max_epoch epochs
+def train(trainer: TrainEpoch,
+          train_dataloader: DataLoader,
+          validator: ValidEpoch,
+          validation_dataloader: DataLoader,
+          tb_writer: SummaryWriter,
+          checkpoint_dir: pathlib.Path,
+          last_epoch: int,
+          max_epoch: int):
+    """train the model and also validate for max_epoch epochs
 
-#     Args:
-#         trainer (TrainEpoch): _description_
-#         train_dataloader (DataLoader): _description_
-#         validator (ValidEpoch): _description_
-#         validation_dataloader (DataLoader): _description_
-#         tb_writer (SummaryWriter): _description_
-#         checkpoint_dir (pathlib.Path): _description_
-#         last_epoch (int): _description_
-#         max_epoch (int): _description_
-#     """
-#     for epoch in range(last_epoch+1, max_epoch):
-#         print("EPOCH:", epoch)
-#         train_logs = trainer.run(train_dataloader)
-#         train_logs["lr"] = trainer.optimizer.param_groups[0]['lr']
-#         valid_logs = validator.run(validation_dataloader)
-#         if tb_writer is not None:
-#             write_logs(train_logs, valid_logs, tb_writer, epoch)
-#         if save_per_epoch:
-#             save(trainer.model, trainer.optimizer, valid_logs, checkpoint_dir, epoch)
+    Args:
+        trainer (TrainEpoch): _description_
+        train_dataloader (DataLoader): _description_
+        validator (ValidEpoch): _description_
+        validation_dataloader (DataLoader): _description_
+        tb_writer (SummaryWriter): _description_
+        checkpoint_dir (pathlib.Path): _description_
+        last_epoch (int): _description_
+        max_epoch (int): _description_
+    """
+    for epoch in range(last_epoch+1, max_epoch):
+        print("EPOCH:", epoch)
+        train_logs = trainer.run(train_dataloader)
+        train_logs["lr"] = trainer.optimizer.param_groups[0]['lr']
+        valid_logs = validator.run(validation_dataloader)
+        write_logs(train_logs, valid_logs, tb_writer, epoch)
+        save(trainer.model, trainer.optimizer, valid_logs, checkpoint_dir, epoch)
 
 
 
