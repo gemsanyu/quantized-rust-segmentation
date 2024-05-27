@@ -112,7 +112,7 @@ def run(args):
     
     config_list = [{
         'op_types': pruned_op_types,
-        'sparse_ratio': 0.8
+        'sparse_ratio': args.sparsity
     }]
     total_training_steps = len(train_dataloader)*args.max_epoch
     total_times = 10
