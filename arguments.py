@@ -49,6 +49,12 @@ def prepare_args():
                         default="imagenet",
                         help="pretrained source (name) for encoder")
     
+    # for pruning
+    parser.add_argument('--sparsity',
+                        type=float,
+                        default=0.2,
+                        help="sparsity target for pruning")
+    
     args = parser.parse_args(sys.argv[1:])
     args.title = args.arch+"_"+args.encoder+"_"+args.dataset+"_"+args.title
     return args
