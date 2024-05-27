@@ -71,13 +71,6 @@ def run(args):
         sample_input = x
         # sample_input = sample_input[None,:,:,:]
         break
-    # before transferring to device
-    start = time.time()
-    _ = model.forward(sample_input)
-    end = time.time()
-    print("inference time:", end-start)
-    sample_input = sample_input.to(device)
-    model = model.to(device)
     
     pruned_op_types = ['Conv2d']
     
@@ -132,15 +125,7 @@ def run(args):
     for key, mask in masks.items():
         masks[key]["weight"].to(torch.device("cpu"))
     
-    model = model.to(torch.device("cpu"))
-    sample_input = sample_input.to(torch.device("cpu"))
     
-    ModelSpeedup(model, sample_input, masks, map_location=torch.device("cpu")).speedup_model()
-    
-    start = time.time()
-    _ = model.forward(sample_input)
-    end = time.time()
-    print("inference time:", end-start)
     
 if __name__ == "__main__":
     ssl._create_default_https_context = ssl._create_unverified_context
