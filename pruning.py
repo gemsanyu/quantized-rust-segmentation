@@ -72,6 +72,8 @@ def run(args):
         # sample_input = sample_input[None,:,:,:]
         break
     
+    model = model.to(device)
+    sample_input = sample_input.to(device)
     pruned_op_types = ['Conv2d']
     
     def training_step(batch, model, *args, **kwargs):
@@ -122,9 +124,12 @@ def run(args):
     sub_pruner = TaylorPruner(model, config_list, evaluator, training_steps=training_steps)
     scheduled_pruner = AGPPruner(sub_pruner, interval_steps=training_steps, total_times=total_times)
     _, masks = scheduled_pruner.compress(max_steps=None, max_epochs=args.max_epoch)
-    for key, mask in masks.items():
-        masks[key]["weight"].to(torch.device("cpu"))
-    
+    # for key, mask in masks.items():
+    #     masks[key]["weight"].to(torch.device("cpu"))
+    scheduled_pruner.unwrap_model()
+    model = model.to(torch.device("cpu"))
+    checkpoint_path = checkpoint_dir/(f"pruned_model-{str(args.sparsity)}.pth")
+    torch.save(model, checkpoint_path.absolute())
     
     
 if __name__ == "__main__":
