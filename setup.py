@@ -25,7 +25,7 @@ ARCH_CLASS_DICT = {
 def prepare_tb_writer(args)->SummaryWriter:
     summary_root = "runs"
     summary_dir = pathlib.Path(".")/summary_root
-    model_summary_dir = summary_dir/args.title
+    model_summary_dir = summary_dir/(args.title+str(args.sparsity))
     model_summary_dir.mkdir(parents=True, exist_ok=True)
     tb_writer = SummaryWriter(log_dir=model_summary_dir.absolute())
     return tb_writer
