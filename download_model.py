@@ -1,9 +1,3 @@
-import ssl
-
-from setup import setup_model
-from arguments import prepare_args
-
-if __name__ == "__main__":
-    ssl._create_default_https_context = ssl._create_unverified_context
-    args = prepare_args()
-    model = setup_model(args)
+version https://git-lfs.github.com/spec/v1
+oid sha256:f7d624211485660e361f674c8bf8abb67b425176cb238580dc8e89b91b2df280
+size 231

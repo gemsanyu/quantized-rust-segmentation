@@ -1,11 +1,3 @@
-#!/bin/bash
-
-python pruning.py --arch fpn --dataset NEA --batch-size 4 --lr 3e-4 --max-epoch 100 --device cuda --encoder mobilenet_v2 --title exp_1 --sparsity 0.9
-python pruning.py --arch pan --dataset NEA --batch-size 4 --lr 3e-4 --max-epoch 100 --device cuda --encoder mobilenet_v2 --title exp_1 --sparsity 0.9
-python pruning.py --arch deeplabv3 --dataset NEA --batch-size 4 --lr 3e-4 --max-epoch 100 --device cuda --encoder mobilenet_v2 --title exp_1 --sparsity 0.9
-python pruning.py --arch unet --dataset NEA --batch-size 4 --lr 3e-4 --max-epoch 100 --device cuda --encoder mobilenet_v2 --title exp_1 --sparsity 0.9
-python pruning.py --arch manet --dataset NEA --batch-size 4 --lr 3e-4 --max-epoch 100 --device cuda --encoder mobilenet_v2 --title exp_1 --sparsity 0.9
-python pruning.py --arch linknet --dataset NEA --batch-size 4 --lr 3e-4 --max-epoch 100 --device cuda --encoder mobilenet_v2 --title exp_1 --sparsity 0.9
-python pruning.py --arch pspnet --dataset NEA --batch-size 4 --lr 3e-4 --max-epoch 100 --device cuda --encoder mobilenet_v2 --title exp_1 --sparsity 0.9
-python pruning.py --arch unet++ --dataset NEA --batch-size 4 --lr 3e-4 --max-epoch 100 --device cuda --encoder mobilenet_v2 --title exp_1 --sparsity 0.9
-python pruning.py --arch deeplabv3+ --dataset NEA --batch-size 4 --lr 3e-4 --max-epoch 100 --device cuda --encoder mobilenet_v2 --title exp_1 --sparsity 0.9
+version https://git-lfs.github.com/spec/v1
+oid sha256:ed9a8143e27aafa316900c7fc123713784ea85e1106b50f8d4d7b62f60fe9c41
+size 1389
