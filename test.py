@@ -1,19 +1,20 @@
+import pathlib
 import random
 import ssl
 
 import numpy as np
+import pandas as pd
 import segmentation_models_pytorch as smp
 import torch
 from arguments import prepare_args
 from segmentation_dataset import (SegmentationDataset, get_preprocessing,
                                   get_validation_augmentation)
+from segmentation_models_pytorch.utils import losses
 from segmentation_models_pytorch.utils.metrics import (Accuracy, Fscore, IoU,
                                                        Precision, Recall)
-from segmentation_models_pytorch.utils import losses
 from segmentation_models_pytorch.utils.train import ValidEpoch
-from torch.utils.data import DataLoader, Dataset
-
 from setup import setup
+from torch.utils.data import DataLoader, Dataset
 
 
 def get_test_dataset(args)->Dataset:
@@ -35,8 +36,15 @@ def test(args):
     loss = losses.JaccardLoss()
     metrics = [IoU(), Accuracy(), Precision(), Recall(), Fscore()]
     tester = ValidEpoch(model, loss, metrics, device=args.device, verbose=True)
-    test_log = tester.run()
-    print(test_log)
+    test_log = tester.run(test_dataloader)
+    test_log["arch"] = args.arch
+    test_log["encoder"] = args.encoder
+    test_log["title"] = args.title
+    result_dir = pathlib.Path(".")/"results"/args.title
+    result_dir.mkdir(parents=True, exist_ok=True)
+    result_file = result_dir/"result.csv"
+    test_df = pd.DataFrame([test_log])
+    test_df.to_csv(result_file.absolute())
 
 if __name__ == "__main__":
     ssl._create_default_https_context = ssl._create_unverified_context
