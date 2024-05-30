@@ -1,0 +1,2 @@
+,jaccard_loss,iou_score,accuracy,precision,recall,fscore,arch,encoder,title,sparsity
+0,0.19492241637460112,0.8058518500163636,0.9568143034803457,0.8896195539112749,0.8938361036366429,0.8914430079788997,fpn,mobilenet_v2,fpn_mobilenet_v2_NEA_exp_1,0.2
